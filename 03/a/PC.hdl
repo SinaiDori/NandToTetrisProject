@@ -27,11 +27,23 @@ CHIP PC {
     // Register(in=in, load=load, out=regout);
     // Register(in=false, load=reset, out=regoutzero);
     
-    Mux16(a=regSpecialOut, b=regOutZero, sel=reset, out=mux16Out1);
-    Mux16(a=mux16Out1, b=regOut, sel=load, out=mux16Out2);
-    Mux16(a=mux16Out2, b=regOutInc16, sel=inc, out=outTemp, out=out);
+    // Mux16(a=regSpecialOut, b=regOutZero, sel=reset, out=mux16Out1);
+    // Mux16(a=mux16Out1, b=regOut, sel=load, out=mux16Out2);
+    // Mux16(a=mux16Out2, b=regOutInc16, sel=inc, out=outTemp, out=out);
+    // Register(in=false, load=reset, out=regOutZero);
+    // Register(in=in, load=load, out=regOut);
+    // Inc16(in=outTemp, out=inc16Out);
+    // Register(in=inc16Out, load=inc, out=regOutInc16);
+    // Register(in=outTemp, load=true, out=regSpecialOut);
+
+    Mux16(a=regSpecialOut, b=regOutInc16, sel=lastInc, out=mux16Out1);
+    Mux16(a=mux16Out1, b=regOut, sel=lastLoad, out=mux16Out2);
+    Mux16(a=mux16Out2, b=regOutZero, sel=lastReset, out=outTemp, out=out);
     Register(in=false, load=reset, out=regOutZero);
     Register(in=in, load=load, out=regOut);
+    Bit(in=load, load=true, out=lastLoad);
+    Bit(in=inc, load=true, out=lastInc);
+    Bit(in=reset, load=true, out=lastReset);
     Inc16(in=outTemp, out=inc16Out);
     Register(in=inc16Out, load=inc, out=regOutInc16);
     Register(in=outTemp, load=true, out=regSpecialOut);
