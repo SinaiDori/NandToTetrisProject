@@ -32,5 +32,52 @@ CHIP CPU {
         pc[15];          // Address of next instruction
 
     PARTS:
-    //// Replace this comment with your code.
+    // firstMux16 - start
+    Mux16(a=instruction, b=ALUout, sel=instruction[15], out=firstMux16out);
+    // firstMux16 - end
+
+    //ARegister - start
+    Not(in=instruction[15], out=notInstruction15);
+    Or(a=notInstruction15, b=instruction[5], out=aRegisterLoad);
+    ARegister(in=firstMux16out, load=aRegisterLoad, out=aRegisterOut);
+    // ARegister - end
+
+    //DRegister - start
+    And(a=instruction[15], b=instruction[4], out=dRegisterLoad);
+    DRegister(in=ALUout, load=dRegisterLoad, out=dRegisterOut);
+    // DRegister - end
+
+    // secondMux16 - start
+    And(a=instruction[15], b=instruction[12], out=secondMux16Sel);
+    Mux16(a=aRegisterOut, b=inM, sel=secondMux16Sel, out=secondMux16out);
+    // secondMux16 - end
+
+    // ALU - start
+    ALU(x=dRegisterOut, y=secondMux16out, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUout, out=outM, zr=zr, ng=ng);
+    // ALU - end
+
+    // writeM - start
+    And(a=instruction[15], b=instruction[3], out=writeM);
+    // writeM - end
+    
+    // jjj - start
+    Not(in=zr, out=notZr);
+    Not(in=ng, out=notNg);
+    And(a=notZr, b=notNg, out=GT);
+    And(a=true, b=zr, out=EQ);
+    And(a=true, b=notNg, out=GE);
+    And(a=true, b=ng, out=LT);
+    And(a=true, b=notZr, out=NE);
+    Or(a=zr, b=ng, out=LE);
+    Mux8Way16(a=false, b[15]=GT, b[0..14]=false, c[15]=EQ, c[0..14]=false, d[15]=GE, d[0..14]=false, e[15]=LT, e[0..14]=false, f[15]=NE, f[0..14]=false, g[15]=LE, g[0..14]=false, h=true, sel=instruction[0..2], out[15]=Mux8WayOutCritical, out[0..14]=Mux8WayOutNotCritical);
+    // jjj - end
+
+    And(a=Mux8WayOutCritical, b=instruction[15], out=Mux8WayOutCriticalAndMSB);
+
+    // PC - start
+    PC(in=aRegisterOut, load=Mux8WayOutCriticalAndMSB, inc=true, reset=reset, out[0..14]=pc, out[15]=NotCriticalPC);
+    // PC - end
+
+    And16(a=aRegisterOut, b=true, out[0..14]=addressM, out[15]=NotCritical);
+
 }
