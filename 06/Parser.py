@@ -3,19 +3,33 @@ class Parser:
     C_INSTRUCTION = 'C_INSTRUCTION'
     L_INSTRUCTION = 'L_INSTRUCTION'
 
+    # Remove empty lines, comments, and in-line comments
+    def lineValidation(self):
+        # create a list to hold the valid lines
+        lines = []
+        # loop through each line in the file
+        for line in self.file.readlines():
+            # check for obvious comment (starts with...)
+            if line.strip() and not line.startswith("//") and not line.startswith("/*") and not line.startswith("*") and not line.startswith("*/"):
+                # if we make it here, the line is not an obvious comment
+                # the line does not start with a comment, check for in-line comment
+                if "//" in line:
+                    # if we make it here, the line has an in-line comment
+                    # the line has an in-line comment, check if the part before the comment is not empty
+                    if line.split("//")[0].strip() != "":
+                        # if we make it here, the line has an in-line comment, and the part before the comment is not empty                        
+                        # add the non-empty part before the comment to the list
+                        lines.append(line.split("//")[0].strip())
+                else:
+                    # if we make it here, the line does not have an obvious comment or an in-line comment
+                    lines.append(line.strip())
+        return lines
+
     def __init__(self, file):
         self.file = file
-        self.lines = [line.strip() for line in self.file.readlines() \
-        # Remove empty lines
-        if line.strip() \
-        # Remove one-line comments
-        and not line.startswith("//") \
-        # Remove multi-line comments
-        and not line.startswith("/*") \
-        and not line.startswith("*") \
-        and not line.startswith("*/")]
+        self.lines = self.lineValidation()
         self.currentLine = 0
-    
+
     def hasMoreLines(self):
         return self.currentLine < len(self.lines)
     
@@ -46,6 +60,8 @@ class Parser:
                 return self.lines[self.currentLine].split("=")[0]
             else:
                 return "null"
+        else:
+            return "null"
     
     def comp(self):
         if self.instructionType() == self.C_INSTRUCTION:
@@ -56,6 +72,8 @@ class Parser:
                     return self.lines[self.currentLine].split("=")[1]
             else:
                 return self.lines[self.currentLine].split(";")[0]
+        else:
+            return "null"
     
     def jump(self):
         if self.instructionType() == self.C_INSTRUCTION:
@@ -63,3 +81,5 @@ class Parser:
                 return self.lines[self.currentLine].split(";")[1]
             else:
                 return "null"
+        else:
+            return "null"
