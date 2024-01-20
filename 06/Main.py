@@ -6,10 +6,10 @@ def main():
     try:
         file = open(sys.argv[1], 'r')
     except IsADirectoryError:
-        for strPath in os.listdir(sys.argv[1]):
-            if strPath.endswith(".asm"):
-                file = open(sys.argv[1] + "/" + strPath, 'r')
-                with open(file.name[:-4] + ".hack", 'w') as hackFile:
+        for filePath in os.listdir(sys.argv[1]):
+            if filePath.endswith(".asm"):
+                file = open(sys.argv[1] + filePath, 'r')
+                with open(str(sys.argv[1] + filePath)[:-4] + ".hack", 'w') as hackFile:
                     ha = HackAssembler(file)
                     ha.firstPass()
                     ha.secondPass(hackFile)
