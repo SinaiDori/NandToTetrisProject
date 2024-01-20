@@ -9,16 +9,20 @@ def main():
         for strPath in os.listdir(sys.argv[1]):
             if strPath.endswith(".asm"):
                 file = open(sys.argv[1] + "/" + strPath, 'r')
-                ha = HackAssembler(file)
-                ha.assemble()
-                file.close()
+                with open(file.name[:-4] + ".hack", 'w') as hackFile:
+                    ha = HackAssembler(file)
+                    ha.firstPass()
+                    ha.secondPass(hackFile)
+                    file.close()
     else:
         if not sys.argv[1].endswith(".asm"):
             print("File is not an .asm file")
             return
-        ha = HackAssembler(file)
-        ha.assemble()
-        file.close()
+        with open(file.name[:-4] + ".hack", 'w') as hackFile:
+                    ha = HackAssembler(file)
+                    ha.firstPass()
+                    ha.secondPass(hackFile)
+                    file.close()
     
 if __name__ == '__main__':
     main()

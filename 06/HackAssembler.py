@@ -24,3 +24,24 @@ class HackAssembler:
             print()
 
             #Code(self.parser.dest(), self.parser.comp(), self.parser.jump(), self.parser.advance())
+    def firstPass(self):
+        while self.parser.hasMoreLines():
+            instructionType = self.parser.instructionType()
+            if instructionType == self.parser.L_INSTRUCTION:
+                symbol = self.parser.symbol()
+                self.symbolTable.addEntry(symbol, self.parser.currentLine)
+            self.parser.advance()
+        self.parser.currentLine = 0
+
+    def secondPass(self, hackFile):
+        while self.parser.hasMoreLines():
+            instructionType = self.parser.instructionType()
+            if instructionType == self.parser.A_INSTRUCTION:
+                symbol = self.parser.symbol()
+                if not self.symbolTable.contains(symbol):
+                    self.symbolTable.addEntry(symbol, self.address)
+                    hackFile.write(self.parser.int_to_bin(int(self.symbolTable.getAddress(symbol))) + "\n")
+                    address += 1
+            elif instructionType == self.parser.C_INSTRUCTION:
+                hackFile.write("111" + self.code.comp() + self.code.dest() + self.code.jump() + "\n")
+            self.parser.advance()

@@ -83,3 +83,6 @@ class Parser:
                 return "null"
         else:
             return "null"
+        
+    def int_to_bin(self, i):
+        return str(bin(i))[2:].zfill(16)
