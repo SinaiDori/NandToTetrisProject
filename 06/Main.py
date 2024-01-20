@@ -18,7 +18,7 @@ def main():
         if not sys.argv[1].endswith(".asm"):
             print("File is not an .asm file")
             return
-        with open(file.name[:-4] + ".hack", 'w') as hackFile:
+        with open(sys.argv[1][:-4] + ".hack", 'w') as hackFile:
                     ha = HackAssembler(file)
                     ha.firstPass()
                     ha.secondPass(hackFile)

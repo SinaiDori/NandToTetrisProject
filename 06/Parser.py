@@ -29,11 +29,14 @@ class Parser:
         self.file = file
         self.lines = self.lineValidation()
         self.currentLine = 0
+        self.currentLineWithOutLabels = 0
 
     def hasMoreLines(self):
         return self.currentLine < len(self.lines)
     
     def advance(self):
+        if self.instructionType() != self.L_INSTRUCTION:
+            self.currentLineWithOutLabels += 1
         self.currentLine += 1
         return self.lines[self.currentLine - 1]
     

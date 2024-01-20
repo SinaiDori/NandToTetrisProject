@@ -1,8 +1,13 @@
 from Parser import Parser
+from Code import Code
+from SymbolTable import SymbolTable
 
 class HackAssembler:
     def __init__(self, file):
         self.parser = Parser(file)
+        self.symbolTable = SymbolTable()
+        self.code = Code()
+        self.address = 16
     
     def assemble(self):
         while self.parser.hasMoreLines():
@@ -23,25 +28,35 @@ class HackAssembler:
                 print('\tjump: ' + jump)
             print()
 
-            #Code(self.parser.dest(), self.parser.comp(), self.parser.jump(), self.parser.advance())
     def firstPass(self):
+        self.parser.currentLine = 0
         while self.parser.hasMoreLines():
             instructionType = self.parser.instructionType()
             if instructionType == self.parser.L_INSTRUCTION:
                 symbol = self.parser.symbol()
-                self.symbolTable.addEntry(symbol, self.parser.currentLine)
+                self.symbolTable.addEntry(symbol, self.parser.currentLineWithOutLabels)
             self.parser.advance()
-        self.parser.currentLine = 0
 
     def secondPass(self, hackFile):
+        self.parser.currentLine = 0
         while self.parser.hasMoreLines():
             instructionType = self.parser.instructionType()
+            isLastLine = self.parser.currentLine == len(self.parser.lines) - 1
+
             if instructionType == self.parser.A_INSTRUCTION:
                 symbol = self.parser.symbol()
-                if not self.symbolTable.contains(symbol):
+                if symbol.isdigit():
+                    hackFile.write(self.parser.int_to_bin(int(symbol)))
+                elif not self.symbolTable.contains(symbol):
                     self.symbolTable.addEntry(symbol, self.address)
-                    hackFile.write(self.parser.int_to_bin(int(self.symbolTable.getAddress(symbol))) + "\n")
-                    address += 1
+                    self.address += 1
+                    hackFile.write(self.parser.int_to_bin(int(self.symbolTable.getAddress(symbol))))
+                else:
+                    hackFile.write(self.parser.int_to_bin(int(self.symbolTable.getAddress(symbol))))
             elif instructionType == self.parser.C_INSTRUCTION:
-                hackFile.write("111" + self.code.comp() + self.code.dest() + self.code.jump() + "\n")
+                hackFile.write("111" + self.code.comp(self.parser.comp()) + self.code.dest(self.parser.dest()) + self.code.jump(self.parser.jump()))
+            
+            if instructionType != self.parser.L_INSTRUCTION and not isLastLine:
+                hackFile.write("\n")
+
             self.parser.advance()
