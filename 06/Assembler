@@ -16,5 +16,3 @@
 #            If your main is contained elsewhere, you will need to change this.
 
 python3 Main.py $*
-
-# #!TO-DO: make sure that the error "zsh: command not found: Assembler" while running Assembler without ./ is OK.
