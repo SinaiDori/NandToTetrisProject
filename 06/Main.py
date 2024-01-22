@@ -6,6 +6,8 @@ def main():
     try:
         file = open(sys.argv[1], 'r')
     except IsADirectoryError:
+        if not sys.argv[1].endswith("/"):
+            sys.argv[1] += "/"
         for filePath in os.listdir(sys.argv[1]):
             if filePath.endswith(".asm"):
                 file = open(sys.argv[1] + filePath, 'r')
