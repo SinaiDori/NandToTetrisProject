@@ -1,11 +1,13 @@
 import os
 
+
 class CodeWriter:
     segmentsWithPointersDict = {'local': 'LCL', 'argument': 'ARG',
                                 'this': 'THIS', 'that': 'THAT', 'pointer 0': 'THIS', 'pointer 1': 'THAT'}
 
     def __init__(self, file):
         self.file = file
+        self.counter = 0
 
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -28,8 +30,9 @@ class CodeWriter:
         self.file.write('M=D\n')
         # at this point we have stack[SP-1] in R13 and stack[SP-2] in R14
         # let's do the arithmetic:
-        if command == 'add' or command == 'sub':
-            action = '+' if command == 'add' else '-'
+        if command == 'add' or command == 'sub' or command == 'and' or command == 'or':
+            action = '+' if command == 'add' else (
+                '-' if command == 'sub' else ('&' if command == 'and' else '|'))
             self.file.write('@R13\n')
             self.file.write('D=M\n')
             self.file.write('@R14\n')
@@ -39,9 +42,10 @@ class CodeWriter:
             self.file.write('M=D\n')
             self.file.write('@SP\n')
             self.file.write('M=M+1\n')
-        elif command == 'neg':
+        elif command == 'neg' or command == 'not':
+            action = '-' if command == 'neg' else '!'
             self.file.write('@R13\n')
-            self.file.write('D=-M\n')
+            self.file.write(f'D={action}M\n')
             self.file.write('@SP\n')
             self.file.write('A=M\n')
             self.file.write('M=D\n')
@@ -52,27 +56,22 @@ class CodeWriter:
             self.file.write('D=M\n')
             self.file.write('@R14\n')
             self.file.write('D=D-M\n')
-            # TODO: comlete the code!!!
-            pass
-        elif command == 'and' or command == 'or':
-            action = '&' if command == 'and' else '|'
-            self.file.write('@R13\n')
-            self.file.write('D=M\n')
-            self.file.write('@R14\n')
-            self.file.write(f'D=D{action}M\n')
+            self.file.write(f'@TRUE{self.counter}\n')
+            self.file.write(f'D;J{command.upper()}\n')
             self.file.write('@SP\n')
             self.file.write('A=M\n')
-            self.file.write('M=D\n')
-            self.file.write('@SP\n')
-            self.file.write('M=M+1\n')
-        elif command == 'not':
-            self.file.write('@R13\n')
-            self.file.write('D=!M\n')
+            self.file.write('M=0\n')
+            self.file.write(f'@END{self.counter}\n')
+            self.file.write('0;JMP\n')
+            self.file.write(f'(TRUE{self.counter})\n')
             self.file.write('@SP\n')
             self.file.write('A=M\n')
-            self.file.write('M=D\n')
+            self.file.write('M=-1\n')
+            self.file.write(f'(END{self.counter})\n')
             self.file.write('@SP\n')
             self.file.write('M=M+1\n')
+            self.counter += 1
+
 
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
