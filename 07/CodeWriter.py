@@ -1,6 +1,5 @@
 import os
 
-
 class CodeWriter:
     segmentsWithPointersDict = {'local': 'LCL', 'argument': 'ARG',
                                 'this': 'THIS', 'that': 'THAT', 'pointer 0': 'THIS', 'pointer 1': 'THAT'}
@@ -8,9 +7,78 @@ class CodeWriter:
     def __init__(self, file):
         self.file = file
 
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+
     def writeArithmetic(self, command: str):
-        # use R13 and R14 as temp registers to store stack[SP-1] and stack[SP-2]
-        pass
+        self.file.write(f'// {command}\n')
+        self.file.write('@SP\n')
+        self.file.write('M=M-1\n')
+        self.file.write('A=M\n')
+        self.file.write('D=M\n')
+        self.file.write('@R13\n')
+        self.file.write('M=D\n')
+        self.file.write('@SP\n')
+        self.file.write('M=M-1\n')
+        self.file.write('A=M\n')
+        self.file.write('D=M\n')
+        self.file.write('@R14\n')
+        self.file.write('M=D\n')
+        # at this point we have stack[SP-1] in R13 and stack[SP-2] in R14
+        # let's do the arithmetic:
+        if command == 'add' or command == 'sub':
+            action = '+' if command == 'add' else '-'
+            self.file.write('@R13\n')
+            self.file.write('D=M\n')
+            self.file.write('@R14\n')
+            self.file.write(f'D=D{action}M\n')
+            self.file.write('@SP\n')
+            self.file.write('A=M\n')
+            self.file.write('M=D\n')
+            self.file.write('@SP\n')
+            self.file.write('M=M+1\n')
+        elif command == 'neg':
+            self.file.write('@R13\n')
+            self.file.write('D=-M\n')
+            self.file.write('@SP\n')
+            self.file.write('A=M\n')
+            self.file.write('M=D\n')
+            self.file.write('@SP\n')
+            self.file.write('M=M+1\n')
+        elif command == 'eq' or command == 'gt' or command == 'lt':
+            self.file.write('@R13\n')
+            self.file.write('D=M\n')
+            self.file.write('@R14\n')
+            self.file.write('D=D-M\n')
+            # TODO: comlete the code!!!
+            pass
+        elif command == 'and' or command == 'or':
+            action = '&' if command == 'and' else '|'
+            self.file.write('@R13\n')
+            self.file.write('D=M\n')
+            self.file.write('@R14\n')
+            self.file.write(f'D=D{action}M\n')
+            self.file.write('@SP\n')
+            self.file.write('A=M\n')
+            self.file.write('M=D\n')
+            self.file.write('@SP\n')
+            self.file.write('M=M+1\n')
+        elif command == 'not':
+            self.file.write('@R13\n')
+            self.file.write('D=!M\n')
+            self.file.write('@SP\n')
+            self.file.write('A=M\n')
+            self.file.write('M=D\n')
+            self.file.write('@SP\n')
+            self.file.write('M=M+1\n')
+
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+# --------------------------------------------------------------------
+
 
     def writePushPop(self, command: str, segment: str, index: int):
         if command == 'C_PUSH':
