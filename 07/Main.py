@@ -23,14 +23,15 @@ def main():
     except IsADirectoryError:
         if not sys.argv[1].endswith("/"):
             sys.argv[1] += "/"
-        for filePath in os.listdir(sys.argv[1]):
-            if filePath.endswith(".vm"):
-                readFile = open(sys.argv[1] + filePath, 'r')
-                with open(str(sys.argv[1] + filePath)[:-3] + ".asm", 'w') as asmFile:
-                    vm = vmTranslator(readFile, asmFile)
+        fileName = sys.argv[1].split("/")[-2]
+        with open(sys.argv[1] + fileName + ".asm", 'w') as writeFile:
+            for filePath in os.listdir(sys.argv[1]):
+                if filePath.endswith(".vm"):
+                    readFile = open(sys.argv[1] + filePath, 'r')
+                    vm = vmTranslator(readFile, writeFile)
                     vm.translate()
                     readFile.close()
-                removeLastLine(str(sys.argv[1] + filePath)[:-3] + ".asm")
+        removeLastLine(sys.argv[1] + fileName + ".asm")
     else:
         if not sys.argv[1].endswith(".vm"):
             print("File is not an .asm file")
