@@ -15,41 +15,35 @@ def removeLastLine(filePath):
 
     with open(filePath, 'w') as file:
         file.write(content)
-    
-
-    def writeBootstrap(file):
-        file.write('@256\n')
-        file.write('D=A\n')
-        file.write('@SP\n')
-        file.write('M=D\n')
-        # TODO: call Sys.init - after completing writeCall in CodeWriter.py
 
 
 def main():
-    return_address_counter = 0
+    filesList = []
     try:
         readFile = open(sys.argv[1], 'r')
     except IsADirectoryError:
         if not sys.argv[1].endswith("/"):
             sys.argv[1] += "/"
         fileName = sys.argv[1].split("/")[-2]
-        with open(sys.argv[1] + fileName + ".asm", 'w') as writeFile:
-            for filePath in os.listdir(sys.argv[1]):
-                if filePath.endswith(".vm"):
-                    readFile = open(sys.argv[1] + filePath, 'r')
-                    vm = vmTranslator(readFile, writeFile)
-                    vm.translate()
-                    readFile.close()
+        writeFile = sys.argv[1] + fileName + ".asm"
+        for filePath in os.listdir(sys.argv[1]):
+            if filePath.endswith(".vm"):
+                # readFile = open(sys.argv[1] + filePath, 'r')
+                filesList.append(sys.argv[1] + filePath)
+        vm = vmTranslator(filesList, writeFile)
+        vm.translate()
         removeLastLine(sys.argv[1] + fileName + ".asm")
+        readFile.close()
     else:
         if not sys.argv[1].endswith(".vm"):
             print("File is not an .asm file")
             return
-        with open(sys.argv[1][:-3] + ".asm", 'w') as asmFile:
-            vm = vmTranslator(readFile, asmFile)
-            vm.translate()
-            readFile.close()
+        writeFile = sys.argv[1][:-3] + ".asm", 'w'
+        filesList.append(sys.argv[1])
+        vm = vmTranslator(filesList, writeFile)
+        vm.translate()
         removeLastLine(sys.argv[1][:-3] + ".asm")
+        readFile.close()
 
 
 if __name__ == '__main__':

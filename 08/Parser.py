@@ -4,12 +4,13 @@ class Parser:
     C_POP = 'C_POP'
     C_LABEL = 'C_LABEL'
     C_GOTO = 'C_GOTO'
-    C_IF-GOTO = 'C_IF-GOTO'
+    C_IF_GOTO = 'C_IF-GOTO'
     C_FUNCTION = 'C_FUNCTION'
     C_RETURN = 'C_RETURN'
     C_CALL = 'C_CALL'
 
     # Remove empty lines, comments, and in-line comments
+
     def lineValidation(self):
         # create a list to hold the valid lines
         lines = []
@@ -29,10 +30,11 @@ class Parser:
                 else:
                     # if we make it here, the line does not have an obvious comment or an in-line comment
                     lines.append(line.strip())
+
         return lines
 
-    def __init__(self, file):
-        self.file = file
+    def __init__(self, filePath):
+        self.file = open(filePath, 'r')
         self.lines = self.lineValidation()
         self.currentLine = 0
 
@@ -53,7 +55,7 @@ class Parser:
         elif self.lines[self.currentLine].startswith("goto"):
             return self.C_GOTO
         elif self.lines[self.currentLine].startswith("if-goto"):
-            return self.C_IF-GOTO
+            return self.C_IF_GOTO
         elif self.lines[self.currentLine].startswith("function"):
             return self.C_FUNCTION
         elif self.lines[self.currentLine].startswith("return"):
@@ -72,3 +74,6 @@ class Parser:
     def arg2(self):
         if self.commandType() in [self.C_PUSH, self.C_POP, self.C_FUNCTION, self.C_CALL]:
             return self.lines[self.currentLine].split(" ")[2]
+
+    def close(self):
+        self.file.close()
