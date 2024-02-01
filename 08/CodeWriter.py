@@ -6,12 +6,11 @@ class CodeWriter:
                                 'this': 'THIS', 'that': 'THAT'}
 
     def __init__(self, filePath):
-        with open(filePath, 'w') as writeFile:
-            self.writeFile = writeFile
-            self.counter = 0
-            self.return_value_counter = 0
-            self.current_read_file_name = ""
-            self.current_function_name = ""
+        self.writeFile = open(filePath, 'w')
+        self.counter = 0
+        self.return_value_counter = 0
+        self.current_read_file_name = ""
+        self.current_function_name = ""
 
     def setFileName(self, file_name):
         self.current_read_file_name = file_name
@@ -143,8 +142,8 @@ class CodeWriter:
                 self.writeFile.write('@SP\n')
                 self.writeFile.write('M=M+1\n')
             elif segment == 'static':
-                self.writeFile.write(
-                    f'@{os.path.basename(self.writeFile.name)}.{index}\n')
+                #self.writeFile.write(f'@{os.path.basename(self.writeFile.name)}.{index}\n')
+                self.writeFile.write(f'@{self.current_read_file_name}.{index}\n')
                 self.writeFile.write('D=M\n')
                 self.writeFile.write('@SP\n')
                 self.writeFile.write('A=M\n')
@@ -188,8 +187,8 @@ class CodeWriter:
                 self.writeFile.write('A=M\n')
                 self.writeFile.write('M=D\n')
             elif segment == 'static':
-                self.writeFile.write(
-                    f'@{os.path.basename(self.writeFile.name)}.{index}\n')
+                #self.writeFile.write(f'@{os.path.basename(self.writeFile.name)}.{index}\n')
+                self.writeFile.write(f'@{self.current_read_file_name}.{index}\n')
                 self.writeFile.write('D=A\n')
                 self.writeFile.write('@R13\n')
                 self.writeFile.write('M=D\n')
@@ -222,40 +221,48 @@ class CodeWriter:
 # --------------------------------------------------------------------
 
     def writeLabel(self, label):
+        self.writeFile.write('// label\n')
         self.writeFile.write(
-            f'({self.current_read_file_name}.{self.current_function_name}${label})\n')
+            f'({self.current_function_name}${label})\n')
 
     def writeGoto(self, label):
+        self.writeFile.write('// goto\n')
         self.writeFile.write(
-            f'@{self.current_read_file_name}.{self.current_function_name}${label}\n')
+            f'@{self.current_function_name}${label}\n')
         self.writeFile.write('0;JMP\n')
 
     def writeIf(self, label):
+        self.writeFile.write('// if-goto\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('M=M-1\n')
         self.writeFile.write('A=M\n')
         self.writeFile.write('D=M\n')
         self.writeFile.write(
-            f'@{self.current_read_file_name}.{self.current_function_name}${label}\n')
+            f'@{self.current_function_name}${label}\n')
         self.writeFile.write('D;JNE\n')
 
     def writeFunction(self, functionName, nVars):
         self.writeFile.write(
-            f'// function {self.current_read_file_name}.{functionName} {nVars}')
+            f'// function {functionName} {nVars}\n')
         self.writeFile.write(
-            f'({self.current_read_file_name}.{functionName})\n')
+            f'({functionName})\n')
         self.writeFile.write('@LCL\n')
         self.writeFile.write('A=M\n')
-        for _ in range(nVars):
+        for _ in range(int(nVars)):
             self.writeFile.write('M=0\n')
             self.writeFile.write('A=A+1\n')
+            self.writeFile.write('D=A\n')
+            self.writeFile.write('@SP\n')
+            self.writeFile.write('M=M+1\n')
+            self.writeFile.write('A=D\n')
+        
 
     def writeCall(self, functionName, nArgs):
         self.writeFile.write(
-            f'// call {self.current_read_file_name}.{functionName} {nArgs}\n')
+            f'// call {functionName} {nArgs}\n')
         # Saves the return address
         self.writeFile.write(
-            f'@{self.current_read_file_name}.{functionName}$ret.{self.return_value_counter}\n')
+            f'@{self.current_function_name}$ret.{self.return_value_counter}\n')
         self.writeFile.write('D=A\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('A=M\n')
@@ -264,7 +271,8 @@ class CodeWriter:
         self.writeFile.write('M=M+1\n')
         # Saves the caller's LCL
         self.writeFile.write('@LCL\n')
-        self.writeFile.write('D=A\n')
+        #self.writeFile.write('D=A\n')
+        self.writeFile.write('D=M\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('A=M\n')
         self.writeFile.write('M=D\n')
@@ -272,7 +280,8 @@ class CodeWriter:
         self.writeFile.write('M=M+1\n')
         # Saves the caller's ARG
         self.writeFile.write('@ARG\n')
-        self.writeFile.write('D=A\n')
+        #self.writeFile.write('D=A\n')
+        self.writeFile.write('D=M\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('A=M\n')
         self.writeFile.write('M=D\n')
@@ -280,7 +289,8 @@ class CodeWriter:
         self.writeFile.write('M=M+1\n')
         # Saves the caller's THIS
         self.writeFile.write('@THIS\n')
-        self.writeFile.write('D=A\n')
+        #self.writeFile.write('D=A\n')
+        self.writeFile.write('D=M\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('A=M\n')
         self.writeFile.write('M=D\n')
@@ -288,7 +298,8 @@ class CodeWriter:
         self.writeFile.write('M=M+1\n')
         # Saves the caller's THAT
         self.writeFile.write('@THAT\n')
-        self.writeFile.write('D=A\n')
+        #self.writeFile.write('D=A\n')
+        self.writeFile.write('D=M\n')
         self.writeFile.write('@SP\n')
         self.writeFile.write('A=M\n')
         self.writeFile.write('M=D\n')
@@ -310,14 +321,15 @@ class CodeWriter:
         self.writeFile.write('M=D\n')
         # Transfer control to the callee
         self.writeFile.write(
-            f'@{self.current_read_file_name}.{functionName}\n')
+            f'@{functionName}\n')
         self.writeFile.write('0;JMP\n')
         # inject the return label
         self.writeFile.write(
-            f'({self.current_read_file_name}.{functionName}$ret.{self.return_value_counter})\n')
+            f'({self.current_function_name}$ret.{self.return_value_counter})\n')
         self.return_value_counter += 1
 
     def writeReturn(self):
+        self.writeFile.write('// return\n')
         # gets the address at the frame's end
         self.writeFile.write('@LCL\n')
         self.writeFile.write('D=M\n')
@@ -383,6 +395,7 @@ class CodeWriter:
         self.writeFile.write('M=D\n')
         # jumps to the return address
         self.writeFile.write('@R14\n')
+        self.writeFile.write('A=M\n')
         self.writeFile.write('0;JMP\n')
 
 # --------------------------------------------------------------------

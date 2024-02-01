@@ -11,11 +11,12 @@ class Parser:
 
     # Remove empty lines, comments, and in-line comments
 
-    def lineValidation(self):
+    def lineValidation(self, filePath):
+        file = open(filePath, 'r')
         # create a list to hold the valid lines
         lines = []
         # loop through each line in the file
-        for line in self.file.readlines():
+        for line in file.readlines():
             # check for obvious comment (starts with...)
             if line.strip() and not line.startswith("//") and not line.startswith("/*") and not line.startswith("*") and not line.startswith("*/"):
                 # if we make it here, the line is not an obvious comment
@@ -30,12 +31,11 @@ class Parser:
                 else:
                     # if we make it here, the line does not have an obvious comment or an in-line comment
                     lines.append(line.strip())
-
+        file.close()
         return lines
 
     def __init__(self, filePath):
-        self.file = open(filePath, 'r')
-        self.lines = self.lineValidation()
+        self.lines = self.lineValidation(filePath)
         self.currentLine = 0
 
     def hasMoreLines(self):
@@ -74,6 +74,3 @@ class Parser:
     def arg2(self):
         if self.commandType() in [self.C_PUSH, self.C_POP, self.C_FUNCTION, self.C_CALL]:
             return self.lines[self.currentLine].split(" ")[2]
-
-    def close(self):
-        self.file.close()
