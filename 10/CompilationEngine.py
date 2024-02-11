@@ -2,7 +2,8 @@ import JackTokenizer
 
 
 class CompileEngine:
-    op = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+    OP = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+    STATEMENTS_OPENERS = ["let", "if", "while", "do", "return"]
 
     def __init__(self, input_file_path, output_file_path):
         self.output_file = open(output_file_path, 'w')
@@ -48,8 +49,17 @@ class CompileEngine:
         self.output_file.write("  " * self.indentation + "</classVarDec>\n")
 
     def compileSubroutine(self):
-        # TODO: implement
-        pass
+        self.output_file.write("  " * self.indentation + "<subroutineDec>\n")
+        self.indentation += 1
+        self.process(["constructor", "function", "method"])
+        self.process(["void", "int", "char", "boolean", self.class_name])
+        self.processIdentifier()
+        self.process(["("])
+        self.compileParameterList()
+        self.process([")"])
+        self.compileSubroutineBody()
+        self.indentation -= 1
+        self.output_file.write("  " * self.indentation + "</subroutineDec>\n")
 
     def compileParameterList(self):
         if self.jack_tokenizer.current_token == "(":
@@ -96,21 +106,22 @@ class CompileEngine:
         self.output_file.write("  " * self.indentation + "</varDec>\n")
 
     def compileStatements(self):
-        self.output_file.write("  " * self.indentation + "<statements>\n")
-        self.indentation += 1
-        while self.jack_tokenizer.current_token in ["let", "if", "while", "do", "return"]:
-            if self.jack_tokenizer.current_token == "let":
-                self.compileLet()
-            elif self.jack_tokenizer.current_token == "if":
-                self.compileIf()
-            elif self.jack_tokenizer.current_token == "while":
-                self.compileWhile()
-            elif self.jack_tokenizer.current_token == "do":
-                self.compileDo()
-            elif self.jack_tokenizer.current_token == "return":
-                self.compileReturn()
-        self.indentation -= 1
-        self.output_file.write("  " * self.indentation + "</statements>\n")
+        if self.jack_tokenizer.current_token in CompileEngine.STATEMENTS_OPENERS:
+            self.output_file.write("  " * self.indentation + "<statements>\n")
+            self.indentation += 1
+            while self.jack_tokenizer.current_token in ["let", "if", "while", "do", "return"]:
+                if self.jack_tokenizer.current_token == "let":
+                    self.compileLet()
+                elif self.jack_tokenizer.current_token == "if":
+                    self.compileIf()
+                elif self.jack_tokenizer.current_token == "while":
+                    self.compileWhile()
+                elif self.jack_tokenizer.current_token == "do":
+                    self.compileDo()
+                elif self.jack_tokenizer.current_token == "return":
+                    self.compileReturn()
+            self.indentation -= 1
+            self.output_file.write("  " * self.indentation + "</statements>\n")
 
     def compileLet(self):
         # TODO: implement
@@ -173,8 +184,8 @@ class CompileEngine:
         self.output_file.write("  " * self.indentation + "<expression>\n")
         self.indentation += 1
         self.compileTerm()
-        while self.jack_tokenizer.current_token in CompileEngine.op:
-            self.process(CompileEngine.op)
+        while self.jack_tokenizer.current_token in CompileEngine.OP:
+            self.process(CompileEngine.OP)
             self.compileTerm()
 
     def compileTerm(self):
