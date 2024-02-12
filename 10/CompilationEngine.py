@@ -1,7 +1,7 @@
-import JackTokenizer
+from JackTokenizer import JackTokenizer
 
 
-class CompileEngine:
+class CompilationEngine:
     OP = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
     STATEMENTS_OPENERS = ["let", "if", "while", "do", "return"]
 
@@ -9,21 +9,22 @@ class CompileEngine:
         self.output_file = open(output_file_path, 'w')
         self.jack_tokenizer = JackTokenizer(input_file_path)
         self.indentation = 0
-        self.class_name = ""
         self.compileClass()
+        self.output_file.close()
+        self.jack_tokenizer.close()
 
     def process(self, str_list):
         if self.jack_tokenizer.current_token in str_list:
             self.printXMLToken(self.jack_tokenizer.current_token)
         else:
-            print("syntax error")
+            print("syntax error" + str(self.jack_tokenizer.current_token))
         self.jack_tokenizer.advance()
 
     def processIdentifier(self):
         if self.jack_tokenizer.current_token_type == "IDENTIFIER":
             self.printXMLToken(self.jack_tokenizer.current_token)
         else:
-            print("syntax error")
+            print("syntax error: " + str(self.jack_tokenizer.current_token) + " is not an identifier")
         self.jack_tokenizer.advance()
 
     def printXMLToken(self, token: str):
@@ -31,14 +32,31 @@ class CompileEngine:
                                self.jack_tokenizer.current_token_type.lower() + "> " + token + " </" + self.jack_tokenizer.current_token_type.lower() + ">\n")
 
     def compileClass(self):
-        # TODO: implement
-        pass
+        self.output_file.write("  " * self.indentation + "<class>\n")
+        self.indentation += 1
+        self.process(["class"])
+        self.processIdentifier()
+        self.process(["{"])
+        while self.jack_tokenizer.current_token in ["static", "field"]:
+            self.compileClassVarDec()
+        while self.jack_tokenizer.current_token in ["constructor", "function", "method"]:
+            self.compileSubroutine()
+        self.process(["}"])
+        self.indentation -= 1
+        self.output_file.write("  " * self.indentation + "</class>\n")
+    
+    def compileType(self, extraList: list = []):
+        if self.jack_tokenizer.current_token in ["int", "char", "boolean"] + extraList:
+            self.process(["int", "char", "boolean"] + extraList)
+        else:
+            print("syntax error")
 
+    # 'static'|'field' type varName(','varName)*';'
     def compileClassVarDec(self):
         self.output_file.write("  " * self.indentation + "<classVarDec>\n")
         self.indentation += 1
         self.process(["static", "field"])
-        self.process(["int", "char", "boolean", self.class_name])
+        self.compileType()
         self.processIdentifier()
         # Optional list of variables
         while self.jack_tokenizer.current_token == ",":
@@ -48,11 +66,12 @@ class CompileEngine:
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</classVarDec>\n")
 
+    # ('constructor'|'function'|'method') ('void'|type) subroutineName '('parameterList')' subroutineBody
     def compileSubroutine(self):
         self.output_file.write("  " * self.indentation + "<subroutineDec>\n")
         self.indentation += 1
         self.process(["constructor", "function", "method"])
-        self.process(["void", "int", "char", "boolean", self.class_name])
+        self.compileType(["void"])
         self.processIdentifier()
         self.process(["("])
         self.compileParameterList()
@@ -61,24 +80,26 @@ class CompileEngine:
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</subroutineDec>\n")
 
+    # ((type varName)(','type varName)*)?
     def compileParameterList(self):
-        if self.jack_tokenizer.current_token == "(":
+        if self.jack_tokenizer.current_token != ")":
             self.output_file.write(
                 "  " * self.indentation + "<parameterList>\n")
             self.indentation += 1
             self.process(["("])
-            self.process(["int", "char", "boolean", self.class_name])
+            self.compileType()
             self.processIdentifier()
             # Optional list of variables
             while self.jack_tokenizer.current_token == ",":
                 self.process([","])
-                self.process(["int", "char", "boolean", self.class_name])
+                self.compileType()
                 self.processIdentifier()
             self.process([")"])
             self.indentation -= 1
             self.output_file.write(
                 "  " * self.indentation + "</parameterList>\n")
 
+    # '{'varDec* statements'}'
     def compileSubroutineBody(self):
         self.output_file.write("  " * self.indentation + "<subroutineBody>\n")
         self.indentation += 1
@@ -91,11 +112,12 @@ class CompileEngine:
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</subroutineBody>\n")
 
+    # 'var' type varName(','varName)*';'
     def compileVarDec(self):
         self.output_file.write("  " * self.indentation + "<varDec>\n")
         self.indentation += 1
         self.process(["var"])
-        self.process(["int", "char", "boolean", self.class_name])
+        self.compileType()
         self.processIdentifier()
         # Optional list of variables
         while self.jack_tokenizer.current_token == ",":
@@ -105,8 +127,9 @@ class CompileEngine:
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</varDec>\n")
 
+    # statement*
     def compileStatements(self):
-        if self.jack_tokenizer.current_token in CompileEngine.STATEMENTS_OPENERS:
+        if self.jack_tokenizer.current_token in CompilationEngine.STATEMENTS_OPENERS:
             self.output_file.write("  " * self.indentation + "<statements>\n")
             self.indentation += 1
             while self.jack_tokenizer.current_token in ["let", "if", "while", "do", "return"]:
@@ -123,10 +146,23 @@ class CompileEngine:
             self.indentation -= 1
             self.output_file.write("  " * self.indentation + "</statements>\n")
 
+    # 'let' varName('['expression']')?'='expression';'
     def compileLet(self):
-        # TODO: implement
-        pass
+        self.output_file.write("  " * self.indentation + "<letStatement>\n")
+        self.indentation += 1
+        self.process(["let"])
+        self.processIdentifier()
+        if self.jack_tokenizer.current_token == "[":
+            self.process(["["])
+            self.compileExpression
+            self.process(["]"])
+        self.process(["="])
+        self.compileExpression
+        self.process([";"])
+        self.indentation -= 1
+        self.output_file.write("  " * self.indentation + "</letStatement>\n")
 
+    # 'if' '('expression')''{'statements'}' ('else''{'statements'}')?
     def compileIf(self):
         self.output_file.write("  " * self.indentation + "<ifStatement>\n")
         self.indentation += 1
@@ -146,6 +182,7 @@ class CompileEngine:
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</ifStatement>\n")
 
+    # 'while''('expression')''{'statements'}'
     def compileWhile(self):
         self.output_file.write("  " * self.indentation + "<whileStatement>\n")
         self.indentation += 1
@@ -158,16 +195,33 @@ class CompileEngine:
         self.process(["}"])
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</whileStatement>\n")
+    
+    # subroutineName'('expressionList')'|(className|varName)'.'subroutineName'('expressionList')'
+    # def compileSubroutineCall(self):
+    #     self.processIdentifier()
+    #     if self.jack_tokenizer.current_token == "(":
+    #         self.process(["("])
+    #         self.compileExpressionList()
+    #         self.process([")"])
+    #     else:
+    #         self.processIdentifier()
+    #         self.process(["."])
+    #         self.processIdentifier()
+    #         self.process(["("])
+    #         self.compileExpressionList()
+    #         self.process([")"])
 
+    # 'do' subroutineCall';'
     def compileDo(self):
         self.output_file.write("  " * self.indentation + "<doStatement>\n")
         self.indentation += 1
         self.process(["do"])
-        self.compileSubroutineCall()
+        self.compileExpression()
         self.process([";"])
         self.indentation -= 1
         self.output_file.write("  " * self.indentation + "</doStatement>\n")
 
+    # 'return' expression?';'
     def compileReturn(self):
         self.output_file.write("  " * self.indentation + "<returnStatement>\n")
         while self.jack_tokenizer.current_token in ["+", "-", "*", "/", "&", "|", "<", ">", "="]:
@@ -180,18 +234,57 @@ class CompileEngine:
         self.output_file.write(
             "  " * self.indentation + "</returnStatement>\n")
 
+    # term (op term)*
     def compileExpression(self):
         self.output_file.write("  " * self.indentation + "<expression>\n")
         self.indentation += 1
         self.compileTerm()
-        while self.jack_tokenizer.current_token in CompileEngine.OP:
-            self.process(CompileEngine.OP)
+        while self.jack_tokenizer.current_token in CompilationEngine.OP:
+            self.process(CompilationEngine.OP)
             self.compileTerm()
 
+    # subroutineName integerConstant|stringConstant|keywordConstant|varName|varName'['expression']'|'('expression')'|unaryOp term
     def compileTerm(self):
-        # TODO: implement
-        pass
+        self.output_file.write("  " * self.indentation + "<term>\n")
+        self.indentation += 1
+        if self.jack_tokenizer.current_token_type in ["INT_CONST", "STRING_CONST", "KEYWORD"]:
+            self.printXMLToken(self.jack_tokenizer.current_token)
+        elif self.jack_tokenizer.current_token == "(":
+            self.process(["("])
+            self.compileExpression()
+            self.process([")"])
+        elif self.jack_tokenizer.current_token in ["-", "~"]:
+            self.process(["-", "~"])
+            self.compileTerm()
+        else:
+            self.processIdentifier()
+            if self.jack_tokenizer.current_token == "[":
+                self.process(["["])
+                self.compileExpression()
+                self.process(["]"])
+            elif self.jack_tokenizer.current_token == "(":
+                self.process(["("])
+                self.compileExpressionList()
+                self.process([")"])
+            elif self.jack_tokenizer.current_token == ".":
+                self.process(["."])
+                self.processIdentifier()
+                self.process(["("])
+                self.compileExpressionList()
+                self.process([")"])
+        self.indentation -= 1
+        self.output_file.write("  " * self.indentation + "</term>\n")
 
+    # (expression(','expression)*)?
     def compileExpressionList(self):
-        # TODO: implement
-        pass
+        # check if there is at least one expression
+        if self.jack_tokenizer.current_token != ")":
+            self.output_file.write("  " * self.indentation + "<expressionList>\n")
+            self.indentation += 1
+            self.compileExpression()
+            # Optional list of expressions
+            while self.jack_tokenizer.current_token == ",":
+                self.process([","])
+                self.compileExpression()
+            self.indentation -= 1
+            self.output_file.write("  " * self.indentation + "</expressionList>\n")

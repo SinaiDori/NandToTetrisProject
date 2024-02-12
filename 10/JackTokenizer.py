@@ -65,6 +65,9 @@ class JackTokenizer:
         self.current_index = 0
         self.current_token = None
         self.current_token_type = None
+    
+    def close(self):
+        self.read_file.close()
 
     def hasMoreTokens(self):
         return self.current_index < len(self.lines)
