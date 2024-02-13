@@ -2,11 +2,11 @@ class JackTokenizer:
     # CONSTANTS!
 
     # Token types
-    KEYWORD = "KEYWORD"
-    SYMBOL = "SYMBOL"
-    IDENTIFIER = "IDENTIFIER"
-    INT_CONST = "INT_CONST"
-    STRING_CONST = "STRING_CONST"
+    KEYWORD = "keyword"
+    SYMBOL = "symbol"
+    IDENTIFIER = "identifier"
+    INT_CONST = "integerConstant"
+    STRING_CONST = "stringConstant"
     # Keywords
     CLASS = "CLASS"
     METHOD = "METHOD"
@@ -43,7 +43,7 @@ class JackTokenizer:
         # loop through each line in the file
         for line in self.read_file.readlines():
             # check for obvious comment (starts with...)
-            if line.strip() and not line.startswith("//") and not line.startswith("/*") and not line.startswith("*") and not line.startswith("*/"):
+            if line.strip() and not line.strip().startswith("//") and not line.strip().startswith("/*") and not line.strip().startswith("*") and not line.strip().startswith("*/"):
                 # if we make it here, the line is not an obvious comment
                 # the line does not start with a comment, check for in-line comment
                 if "//" in line:

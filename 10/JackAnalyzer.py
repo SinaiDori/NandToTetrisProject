@@ -2,6 +2,7 @@ from CompilationEngine import CompilationEngine
 
 
 class JackAnalyzer:
+
     def __init__(self, read_files_paths_list):
         self.read_files_paths_list = read_files_paths_list
     
