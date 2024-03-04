@@ -3,3 +3,8 @@
 **.hack
 **.tst
 **.cmp
+**.asm
+**.xml
+**.zip
+.vscode/*
+*/__pycache__/*
